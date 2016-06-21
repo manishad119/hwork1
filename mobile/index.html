@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    <title>Title</title>
+    <script src="./js/jquery-2.1.4.min.js" type="text/javascript"></script>
+    <script type="text/javascript" src="https://maps.google.com/maps/api/js?sensor=true"></script>
+    <script src="./js/gmaps.js" type="text/javascript"></script>
+    <script type="text/javascript" src="./js/main.js"></script>
+    <link href='http://fonts.googleapis.com/css?family=Ropa+Sans' rel='stylesheet'>
+    <link href="http://maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel='stylesheet'>
+    <link rel="stylesheet" href="./css/main.css">
+    <script type="text/javascript">
+        $("body").ready(function(){
+            $(".search-button").click(function(){
+                if($(".search-input").css("display") == "none"){
+                    $(".search-input").css("display", "");
+                }else{
+
+                    var val = getSearchString();
+                    if(val){
+                        searchData(isItemSearchOn(), val);
+                    }else{
+                        $(".search-input").css("display", "none");
+                    }
+                }
+            });
+            openProfilePage();
+            $("#mappage").css("display", "");
+            createMap();
+
+            locate();
+        });
+    </script>
+    <style>
+        .borrow-container{
+            margin: 10px;
+        }
+        .borrow-message{
+            width: 100%;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            background:#fff;
+            transition:all 800ms;
+            border-radius:3px 0 0 3px;
+            font-family: 'Ropa Sans', sans-serif;
+            border:solid 1px #ccc;
+            border-right:none;
+            outline:none;
+            color:#999;
+            height:64px;
+            line-height:16px;
+            display:inline-block;
+            font-size:16px
+        }
+        .borrow-now{
+            cursor: pointer;
+            border:none;
+            outline:none;
+            background:#0099CC;
+            border-bottom:solid 4px #006699;
+            font-family: 'Ropa Sans', sans-serif;
+            margin:0 auto;
+            display:block;
+            height:40px;
+            width:100%; padding:0 10px;
+            border-radius:3px;
+            font-size:16px;
+            color:#FFF;
+        }
+        .notification-data-circle{
+            color: #ff1f15;
+            height: 20px;
+            width: 20px;
+            border-radius: 50%;
+            text-shadow: 0 0 1px rgb(255, 26, 31), 0 0 1px rgb(255, 23, 28), 0 0 6px rgb(255, 72, 16), 0 0 5px #ff0a18, 0 0 5px #ff2330, 0 0 5px #00ffff , 0 0 5px #00ffff ;
+        }
+    </style>
+</head>
+<body>
+    <div class="header-part">
+        <div class="main-header">
+            <div class="back-button nav-btn" onclick="nearByItems();"><i class="fa fa-home"></i></div>
+            <div class="page-title">Main Page</div>
+            <div class="log-off nav-btn" onclick='return logOff();'>
+                <i class="fa fa-power-off"></i>
+            </div>
+            <div class="publish-item nav-btn" onclick='return loadPage("publishpage", {});'>
+                <i class="fa fa-plus-circle"></i>
+            </div>
+            <div class="notification-item nav-btn hide" onclick='showThisPage("notificationpage")'>
+                <i class="notification-data-circle"></i>
+            </div>
+            <div class="profile-page nav-btn" onclick='openProfilePage();'>
+                <i class="fa fa-smile-o"></i>
+            </div>
+            <div class="nav-btn search-button-btn nav-on">
+                <i class="search-button fa fa-search"></i>
+                <input type="text" class="search-input" id="search" style="display: none;">
+            </div>
+        </div>
+    </div>
+    <div id="mainpage"  style="display: none;">
+        <div id="people-form">
+            <input type="radio" checked id="item" name="switch" class="hide" onclick="nearByItems();">
+            <input type="radio" id="people" name="switch" class="hide" onclick="nearByPeoples();">
+
+            <div>
+                <ul class="form-header">
+                    <li><label for="item"><i class="fa fa-car"></i> Items Nearby</label></li>
+                    <li><label for="people"><i class="fa fa-user"></i> People Nearby<label for="people"></label></label></li>
+                </ul>
+            </div>
+
+            <div class="section-out">
+                <section class="item-section">
+                    <div class="item">
+                        <ul class="mainpage-item-list">
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="people-section">
+                    <div class="people">
+                        <ul class="mainpage-people-list">
+
+                        </ul>
+                    </div>
+                </section>
+            </div>
+
+        </div>
+    </div>
+    <div id="publishpage" style="display: none;">
+        <section class="publish-section">
+            <div class="publish">
+                <ul class="ul-list">
+                    <li><button class="btn input button map-btn" onclick='takeMeToTheMap();'/>Set Location (Not Set)</button></li>
+                    <form>
+                        <li><input type="text" required class="input publish-input" placeholder="Item Name" name="itemName"/><span class="icon"><i class="fa fa-car"></i></span></li>
+                        <li><input type="number" required class="input publish-input" placeholder="Money" name="money"/><span class="icon"><i class="fa fa-money"></i></span></li>
+                        <li><input type="number" required class="input publish-input" placeholder="Maximum Period In Days" name="period"/><span class="icon"><i class="fa fa-calendar"></i></span></li>
+                        <li><input type="text" class="input publish-input" placeholder="Express Type" name="expressType"/><span class="icon"><i class="fa fa-truck"></i></span></li>
+                        <li class="hide"><input type="text" class="hide publish-input" name="longitude" id="publish-lng" value=""/></li>
+                        <li class="hide"><input type="text" class="hide publish-input" name="latitude" id="publish-lat" value=""/></li>
+                        <li class="hide"><input type="text" class="hide publish-input" name="address" id="publish-address" value=""/></li>
+
+                        <li><input type="file" hidden="hidden" class="file publish-input" placeholder="Item Image" name="itemImageSrc"/><span class="icon"><i class="fa fa-photo"></i></span></li>
+                        <li><textarea class="input comment-post-textarea publish-input" name="itemIntroduction" placeholder="Item Description"></textarea></li>
+                        <li><button onclick="return publishThisItem(this.form);" class="btn signupbtn">Publish</button></li>
+                    </form>
+                </ul>
+            </div>
+        </section>
+    </div>
+    <div id="userpage" style="display: none;">
+        <input type="hidden" class="user-Id" name="userId" id="userpage-iid">
+        <div class="container-div">
+            <div class="user-profile profile-image">
+
+            </div>
+            <div class="item-data below-profile">
+                <div class="below-profile-container">
+                    <div class="item-data-title profile-data">
+                        <div class="profile-name">Haha</div>
+                        <div class="borrow-rules">
+                            <div class="borrow-list"><div class="borrow-list-label">E-mail : </div><div class="profile-email borrow-list-data">fas</div></div>
+                            <div class="borrow-list"><div class="borrow-list-label">Gender : </div><i class="profile-gender fa fa-male"></i></div>
+                            <div class="borrow-list"><div class="borrow-list-label">Contact : </div><div class="profile-contact borrow-list-data">fas</div></div>
+                            <div class="borrow-list"><div class="borrow-list-label">Username : </div><div class="profile-uname borrow-list-data">fda</div></div>
+                        </div>
+                    </div>
+                    <div class="item-comments-title">Items</div>
+                    <ul class="userpage-item-list">
+                        <div class="items">
+                            <div class="item-image-icon">
+                                <img class="item-img" src="http://localhost/pjmgmt/pics/itemPic/0.jpg" />
+                            </div>
+                            <div class="item-detail">
+                                <div class="item-name">Big Data File</div>
+                                <div class="item-status">Borrowed<i class="fa fa-close"></i></div>
+                            </div>
+                        </div>
+
+                    </ul>
+                </div>
+                <div class="item-footer profile-footer"></div>
+            </div>
+        </div>
+    </div>
+    <div id="itempage" style="display: none;">
+        <input type="hidden" class="item-Id" name="itemId" id="itempage-iid">
+        <div class="container-div">
+            <div class="item-profile profile-image">
+
+            </div>
+            <div class="item-data below-profile">
+                <div class="below-profile-container">
+                    <div class="item-data-title profile-data">
+                        <div class="item-name"></div>
+                        <div class="borrow-rules">
+                            <div class="borrow-list"><div class="borrow-list-label">Money : </div><div class="item-money borrow-list-data"></div></div>
+                            <div class="borrow-list"><div class="borrow-list-label">Maximum Borrow Period : </div><div class="item-period borrow-list-data"></div></div>
+                            <div class="borrow-list"><div class="borrow-list-label">Longitude : </div><div class="item-longitude borrow-list-data"></div></div>
+                            <div class="borrow-list"><div class="borrow-list-label">Latitude : </div><div class="item-latitude borrow-list-data"></div></div>
+                            <div class="borrow-list"><div class="borrow-list-label">Address : </div><div class="item-address borrow-list-data" style="overflow: hidden;" ></div></div>
+                            <div class="borrow-list"><div class="borrow-list-label">Created Date : </div><div class="item-created borrow-list-data"></div></div>
+                            <div class="borrow-list"><div class="borrow-list-label">Rating : </div><div class="item-rating borrow-list-data"></div></div>
+                            <div class="borrow-list"><div class="borrow-list-label">Express Type : </div><div class="item-expressType borrow-list-data"></div></div>
+                        </div>
+                        <div class="item-description">
+                        </div>
+                        <div class="item-owner">
+                            <div class="person-profile-data">
+                                <div class="profile-pic-icon">
+                                    <img class="profile-pic-img-icon" src="http://localhost/pjmgmt/pics/profilePic/0.jpg">
+                                </div>
+                                <div class="profile-pic-name"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="item-comments-title">Comments</div>
+                    <div class="item-comments">
+
+                    </div>
+                    <div class="post-comment">
+                        <textarea name="comment" class="input comment-post-textarea comment-area" placeholder="Post A Comment"></textarea>
+                        <button class="btn comment-btn" onclick="commentToAItem();">Post</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+    <div id="mappage" style="display: none;">
+        <div id="map">
+
+        </div>
+    </div>
+    <div id="searchpage" style="display: none;">
+        <div id="search-people-form">
+            <input type="radio" checked id="search-item" name="switch" class="hide" onclick="searchItem()">
+            <input type="radio" id="search-people" name="switch" class="hide" onclick="searchPeople()">
+
+            <div>
+                <ul class="form-header">
+                    <li><label for="search-item"><i class="fa fa-car"></i> Items</label></li>
+                    <li><label for="search-people"><i class="fa fa-user"></i> People<label for="search-people"></label></label></li>
+                </ul>
+            </div>
+            <div class="section-out-data">
+                <section class="item-section">
+                    <div class="item">
+                        <ul class="searchpage-item-list">
+                        </ul>
+                    </div>
+                </section>
+
+                <section class="people-section">
+                    <div class="people">
+                        <ul class="searchpage-people-list">
+                        </ul>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+    <div id="notificationpage" style="display: none;">
+        <div class="notification-container">
+            <div class="notifications">
+                <ul class="notificationpage-list">
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div id="borrowpage" style="display: none;">
+        <div class="borrow-container">
+            <input type="text" class="hide borrow-item-id">
+            <textarea name="message" class="borrow-message" placeholder="Write a message for Lender"></textarea>
+            <button class="borrow-now" onclick="borrowThatBookNow();">Borrow</button>
+        </div>
+    </div>
+    <div class="item-footer profile-footer">
+        <div class="main-item-footer">
+            <div class="footer-icon hide borrow-book" data="" onclick="footerIconClick('borrow');"><i class="fa ">Borrow</i></div>
+            <div class="footer-icon hide lend-book" data="" onclick="footerIconClick('lend');"><i class="fa ">Lend</i></div>
+            <div class="footer-icon hide return-book" data="" onclick="footerIconClick('return');"><i class="fa ">Return</i></div>
+            <div class="footer-icon hide already-borrowed"><i class="fa ">Already Borrowed</i></div>
+        </div>
+    </div>
+</body>
+</html>
